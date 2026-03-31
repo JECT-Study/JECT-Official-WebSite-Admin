@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
+
+import { SnackbarProvider, ToastProvider } from '@jects/jds';
 import { JDSThemeProvider } from '@jects/jds/theme';
-import { ToastProvider, SnackbarProvider } from '@jects/jds';
 
 interface AppProvidersProps {
   children: ReactNode;
