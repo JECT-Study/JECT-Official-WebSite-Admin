@@ -10,16 +10,13 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 const FSD_LAYERS = [
-  'app',
-  'pages',
-  'widgets',
-  'features',
-  'entities',
-  'shared',
+  { type: 'app', pattern: 'src/app/**', mode: 'full' },
+  { type: 'pages', pattern: 'src/pages/*', mode: 'folder' },
+  { type: 'widgets', pattern: 'src/widgets/*', mode: 'folder' },
+  { type: 'features', pattern: 'src/features/*', mode: 'folder' },
+  { type: 'entities', pattern: 'src/entities/*', mode: 'folder' },
+  { type: 'shared', pattern: 'src/shared/**', mode: 'full' },
 ];
-
-const getLowerLayers = (layer) =>
-  FSD_LAYERS.slice(FSD_LAYERS.indexOf(layer) + 1);
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -43,11 +40,10 @@ export default defineConfig([
       'simple-import-sort': simpleImportSort,
     },
     settings: {
-      'boundaries/elements': FSD_LAYERS.map((layer) => ({
-        type: layer,
-        pattern: `src/${layer}/*`,
-        mode: 'folder',
-      })),
+      'boundaries/elements': FSD_LAYERS,
+      'import/resolver': {
+        typescript: { alwaysTryTypes: true },
+      },
     },
     rules: {
       'boundaries/dependencies': [
@@ -56,13 +52,10 @@ export default defineConfig([
           default: 'disallow',
           message:
             '"${file.type}" 레이어에서 "${dependency.type}" 레이어를 import할 수 없습니다. (FSD 의존성 규칙 위반)',
-          rules: [
-            ...FSD_LAYERS.filter((l) => l !== 'shared').map((layer) => ({
-              from: { type: layer },
-              allow: { to: { type: getLowerLayers(layer) } },
-            })),
-            { from: { type: 'shared' }, allow: { to: { type: 'shared' } } },
-          ],
+          rules: FSD_LAYERS.map(({ type }, index) => ({
+            from: { type },
+            allow: { to: { type: FSD_LAYERS.slice(index).map((l) => l.type) } },
+          })),
         },
       ],
       'simple-import-sort/imports': [
@@ -71,12 +64,7 @@ export default defineConfig([
           groups: [
             ['^react'],
             ['^@?\\w'],
-            ['^@/app'],
-            ['^@/pages'],
-            ['^@/widgets'],
-            ['^@/features'],
-            ['^@/entities'],
-            ['^@/shared'],
+            ...FSD_LAYERS.map(({ type }) => [`^@/${type}`]),
             ['^\\.'],
           ],
         },
